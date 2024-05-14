@@ -15,6 +15,7 @@ namespace ImgStorgeASP.Models
         public IActionResult GetImage(string image_name)
         {
             // Construct the file path based on the image_name
+            Console.WriteLine($"Reading {image_name}'s image...");
             string filePath = Path.Combine($"{Directory.GetCurrentDirectory()}/json_{image_name}/", $"{image_name}.png");
 
             // Check if the file exists

@@ -49,6 +49,7 @@ namespace ImgStorgeASP.Controllers
             string filePath = Path.Combine($"./json_{model.Path}",$"{model.Path}.png");
 
             Console.WriteLine($"FILENAME : {filePath}");
+
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)); //create if does not exist
 
             using(var stream = new FileStream(filePath, FileMode.Create))
