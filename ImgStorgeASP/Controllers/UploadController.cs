@@ -4,6 +4,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using ImgStorgeASP.Models;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+using ImgStorgeASP.Misc;
+using System.IO; 
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -56,6 +61,17 @@ namespace ImgStorgeASP.Controllers
             {
                 await model.Image.CopyToAsync(stream);     //saving image inside choosen folder
             }
+
+            string jsonPath = Path.Combine($"./json_{model.Path}","img.json");
+
+
+
+            var datatowrite = new JObject
+            {
+                ["link"] = $"http://{GetIP.GetLocalIPAddress()}:5005/{model.Path}"
+            };
+
+            System.IO.File.WriteAllText(jsonPath, datatowrite.ToString());
 
             return Ok("File uploaded successfully.");
         }
