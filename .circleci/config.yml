@@ -3,26 +3,27 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: mcr.microsoft.com/dotnet/sdk:7.0  # Primary container for .NET SDK 7
-      - image: cimg/node:18.16  # Secondary container with Node.js 18 for Contrast CLI
-        alias: nodejs  # Alias the container for easy reference
+      - image: mcr.microsoft.com/dotnet/sdk:7.0
     steps:
       - checkout
       - run:
-          name: Install Dependencies (zip and CodeSec CLI)
+          name: Install Dependencies
           command: |
-            apt-get update && apt-get install -y zip
+            apt-get update && apt-get install -y zip npm
+            npm install -g n
+            n stable
+            node -v
             npm install -g @contrast/contrast
       - run:
           name: Restore NuGet Packages
           command: dotnet restore ImgStorgeASP.sln
       - run:
-          name: "Publish to a subfolder"
+          name: Publish to a subfolder
           command: |
             ENV_CONFIG_NAME=$(if [ "${CIRCLE_BRANCH}" = "main" ]; then echo "Release"; else echo "Debug"; fi)
             dotnet publish ImgStorgeASP.sln --configuration ${ENV_CONFIG_NAME} --output ImgStorageOutput
       - run:
-          name: "Create a deployment .zip package"
+          name: Create a deployment .zip package
           command: |
             cd ImgStorageOutput
             zip -r imgstorageasp.zip *
