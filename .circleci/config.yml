@@ -4,13 +4,14 @@ jobs:
   build:
     docker:
       - image: mcr.microsoft.com/dotnet/sdk:7.0
-    working_directory: ~/project
     steps:
       - checkout
       - run:
           name: Install Dependencies
           command: |
-            apt-get update && apt-get install -y zip npm
+            apt-get update && apt-get install -y zip curl
+            curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+            apt-get install -y nodejs
             npm install -g @contrast/contrast
       - run:
           name: Restore NuGet Packages
@@ -33,29 +34,33 @@ jobs:
 
   code-scan:
     docker:
-      - image: cimg/node:18.16
-    working_directory: ~/project
+      - image: cimg/base:stable
     steps:
-      - checkout
       - attach_workspace:
-          at: ~/project
+          at: /workspace
       - run:
-          name: Authenticate CodeSec CLI
+          name: Install Node.js and Contrast CLI
           command: |
-            contrast auth --api-key 2XWW1lpZjal6LUJ66E9lGa19oa1I1ve8 \
-              --authorization Y2F0aGFyYXNpc0BtYWlsLnJ1OkxOVE9DWUxLQTRNSTVMTEk= \
-              --organization-id 4608bac8-b620-4678-893e-5417667cc262 \
+            curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+            apt-get install -y nodejs
+            npm install -g @contrast/contrast
+      - run:
+          name: Authenticate Contrast CLI
+          command: |
+            contrast auth --api-key YOUR_API_KEY \
+              --authorization YOUR_AUTHORIZATION \
+              --organization-id YOUR_ORG_ID \
               --host https://ce.contrastsecurity.com
       - run:
           name: Perform SAST Scan
-          command: contrast scan --file ImgStorageOutput/imgstorageasp.zip
+          command: contrast scan --file /workspace/ImgStorageOutput/imgstorageasp.zip
 
   notify:
     docker:
       - image: cimg/base:stable
     steps:
       - run:
-          name: Check Workflow Status and Send Notification
+          name: Send Notification
           command: |
             if [ "${CIRCLE_JOB_STATUS}" = "success" ]; then
               curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
