@@ -25,9 +25,9 @@ jobs:
             zip -r imgstorageasp.zip *
             cd ..
       - persist_to_workspace:
-          root: .
+          root: ImgStorageOutput
           paths:
-            - ImgStorageOutput/imgstorageasp.zip
+            - imgstorageasp.zip
 
   code-scan:
     docker:
@@ -48,7 +48,7 @@ jobs:
               --host https://ce.contrastsecurity.com
       - run:
           name: Perform SAST Scan on Deployment Package
-          command: contrast scan --file /workspace/ImgStorageOutput/imgstorageasp.zip
+          command: contrast scan --file /workspace/imgstorageasp.zip
 
   notify:
     docker:
