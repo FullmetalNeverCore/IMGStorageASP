@@ -1,15 +1,17 @@
+
 version: 2.1
 
 jobs:
-  build:
+  build-and-scan:
     docker:
       - image: mcr.microsoft.com/dotnet/sdk:7.0  # Using .NET 7 for compatibility
     steps:
       - checkout
       - run:
-          name: Install `zip` Dependency
+          name: Install Dependencies (zip and CodeSec CLI)
           command: |
             apt-get update && apt-get install -y zip
+            sudo npm install -g @contrast/contrast
       - run:
           name: Restore NuGet Packages
           command: dotnet restore ImgStorgeASP.sln
@@ -24,21 +26,6 @@ jobs:
             cd ImgStorageOutput
             zip -r imgstorageasp.zip *
             cd ..
-      - persist_to_workspace:
-          root: ImgStorageOutput
-          paths:
-            - imgstorageasp.zip
-
-  code-scan:
-    docker:
-      - image: cimg/node:18.16
-    steps:
-      - checkout
-      - attach_workspace:
-          at: /workspace
-      - run:
-          name: Install CodeSec CLI
-          command: sudo npm install -g @contrast/contrast
       - run:
           name: Authenticate CodeSec CLI
           command: |
@@ -48,7 +35,7 @@ jobs:
               --host https://ce.contrastsecurity.com
       - run:
           name: Perform SAST Scan on Deployment Package
-          command: contrast scan --file /workspace/imgstorageasp.zip
+          command: contrast scan --file ImgStorageOutput/imgstorageasp.zip
 
   notify:
     docker:
@@ -72,12 +59,9 @@ jobs:
 workflows:
   build-and-scan:
     jobs:
-      - build
-      - code-scan:
-          requires:
-            - build
+      - build-and-scan
       - notify:
           requires:
-            - code-scan
+            - build-and-scan
           context:
             - TELEGRAM_BOT_TOKEN
