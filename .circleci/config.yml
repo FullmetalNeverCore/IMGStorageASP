@@ -43,16 +43,15 @@ jobs:
       - run:
           name: Check if Day is Even
           command: |
-            echo "${API_KEY} ${ORG} ${HOST}"
-            DAY=$(date +%d)
+            DAY=02
             if [ $((10#$DAY % 2)) -ne 0 ]; then
               echo "Today is an odd day ($DAY). Skipping code scan."
             else
               echo "Today is an even day ($DAY). Proceeding with code scan."
-              npx contrast auth --api-key 2XWW1lpZjal6LUJ66E9lGa19oa1I1ve8 \
-              --authorization Y2F0aGFyYXNpc0BtYWlsLnJ1OkxOVE9DWUxLQTRNSTVMTEk= \
-              --organization-id 4608bac8-b620-4678-893e-5417667cc262 \
-              --host https://ce.contrastsecurity.com
+              npx contrast auth --api-key ${API_KEY} \
+              --authorization ${AUTH} \
+              --organization-id ${ORG} \
+              --host ${HSOT}
               npx contrast scan --file ImgStorageOutput/imgstorageasp.zip
             fi
 
