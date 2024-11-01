@@ -3,36 +3,39 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: mcr.microsoft.com/dotnet/sdk:7.0  # .NET 7 SDK
-      - image: cimg/node:18.16  # Node.js 18 with npm
+      - image: mcr.microsoft.com/dotnet/sdk:7.0  # Using .NET 7 for compatibility
     steps:
       - checkout
+      - run:
+          name: Install Dependencies (zip and npm)
+          command: |
+            apt-get update && apt-get install -y zip npm
+      - run:
+          name: Install CodeSec CLI
+          command: npm install -g @contrast/contrast
       - run:
           name: Restore NuGet Packages
           command: dotnet restore ImgStorgeASP.sln
       - run:
-          name: Publish Application
+          name: "Publish to a subfolder"
           command: |
             ENV_CONFIG_NAME=$(if [ "${CIRCLE_BRANCH}" = "main" ]; then echo "Release"; else echo "Debug"; fi)
             dotnet publish ImgStorgeASP.sln --configuration ${ENV_CONFIG_NAME} --output ImgStorageOutput
       - run:
-          name: Create Deployment Package
+          name: "Create a deployment .zip package"
           command: |
             cd ImgStorageOutput
             zip -r imgstorageasp.zip *
             cd ..
       - run:
-          name: Install CodeSec CLI
-          command: npm install -g @contrast/contrast
-      - run:
           name: Authenticate CodeSec CLI
           command: |
-            contrast auth --api-key YOUR_API_KEY \
-              --authorization YOUR_AUTHORIZATION \
-              --organization-id YOUR_ORG_ID \
+            contrast auth --api-key 2XWW1lpZjal6LUJ66E9lGa19oa1I1ve8 \
+              --authorization Y2F0aGFyYXNpc0BtYWlsLnJ1OkxOVE9DWUxLQTRNSTVMTEk= \
+              --organization-id 4608bac8-b620-4678-893e-5417667cc262 \
               --host https://ce.contrastsecurity.com
       - run:
-          name: Perform SAST Scan
+          name: Perform SAST Scan on Deployment Package
           command: contrast scan --file ImgStorageOutput/imgstorageasp.zip
 
   notify:
@@ -40,7 +43,7 @@ jobs:
       - image: cimg/base:stable
     steps:
       - run:
-          name: Send Notification
+          name: Check Workflow Status and Send Notification
           command: |
             if [ "${CIRCLE_JOB_STATUS}" = "success" ]; then
               curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
