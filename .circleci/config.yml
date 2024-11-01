@@ -43,8 +43,7 @@ jobs:
       - run:
           name: Check if Day is Even
           command: |
-            # Use the current day
-            DAY=$(date +%d)
+            DAY=02
             if [ $((10#$DAY % 2)) -ne 0 ]; then
               echo "Today is an odd day ($DAY). Skipping code scan."
             else
