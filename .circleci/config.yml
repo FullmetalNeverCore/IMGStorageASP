@@ -3,24 +3,35 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: mcr.microsoft.com/dotnet/sdk:7.0  # Updated to .NET 7 for compatibility
+      - image: mcr.microsoft.com/dotnet/sdk:7.0  # Using .NET 7 for compatibility
     steps:
       - checkout
       - run:
           name: Restore NuGet Packages
           command: dotnet restore ImgStorgeASP.sln
       - run:
-          name: Build Solution
-          command: dotnet build ImgStorgeASP.sln --configuration Release
+          name: "Publish to a subfolder"
+          command: |
+            ENV_CONFIG_NAME=$(if [ "${CIRCLE_BRANCH}" = "main" ]; then echo "Release"; else echo "Debug"; fi)
+            dotnet publish ImgStorgeASP.sln --configuration ${ENV_CONFIG_NAME} --output ImgStorageOutput
       - run:
-          name: Run Tests
-          command: dotnet test ImgStorgeASP.sln --configuration Release
+          name: "Create a deployment .zip package"
+          command: |
+            cd ImgStorageOutput
+            zip -r imgstorageasp.zip *
+            cd ..
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ImgStorageOutput/imgstorageasp.zip
 
   code-scan:
     docker:
       - image: cimg/node:18.16
     steps:
       - checkout
+      - attach_workspace:
+          at: /workspace
       - run:
           name: Install CodeSec CLI
           command: sudo npm install -g @contrast/contrast
@@ -32,9 +43,27 @@ jobs:
               --organization-id 4608bac8-b620-4678-893e-5417667cc262 \
               --host https://ce.contrastsecurity.com
       - run:
-          name: Perform SAST Scan
-          command: contrast scan --file ImgStorgeASP.sln
+          name: Perform SAST Scan on Deployment Package
+          command: contrast scan --file /workspace/ImgStorageOutput/imgstorageasp.zip
 
+  notify:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - run:
+          name: Check Workflow Status and Send Notification
+          command: |
+            if [ "${CIRCLE_JOB_STATUS}" = "success" ]; then
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+                -d "chat_id=${TELEGRAM_NOTIFICATION_GROUP_ID}" \
+                -d "parse_mode=Markdown" \
+                --data-urlencode "text=✅ *Build and Scan Workflow* #${CIRCLE_BUILD_NUM} successfully completed."
+            else
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+                -d "chat_id=${TELEGRAM_NOTIFICATION_GROUP_ID}" \
+                -d "parse_mode=Markdown" \
+                --data-urlencode "text=❌ *Build and Scan Workflow* #${CIRCLE_BUILD_NUM} failed."
+            fi
 
 workflows:
   build-and-scan:
@@ -43,3 +72,8 @@ workflows:
       - code-scan:
           requires:
             - build
+      - notify:
+          requires:
+            - code-scan
+          context:
+            - TELEGRAM_BOT_TOKEN
