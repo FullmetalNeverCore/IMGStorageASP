@@ -4,12 +4,14 @@ jobs:
   build:
     docker:
       - image: mcr.microsoft.com/dotnet/sdk:7.0
+    working_directory: ~/project
     steps:
       - checkout
       - run:
-          name: Install zip
+          name: Install Dependencies
           command: |
-            apt-get update && apt-get install -y zip
+            apt-get update && apt-get install -y zip npm
+            npm install -g @contrast/contrast
       - run:
           name: Restore NuGet Packages
           command: dotnet restore ImgStorgeASP.sln
@@ -32,13 +34,11 @@ jobs:
   code-scan:
     docker:
       - image: cimg/node:18.16
+    working_directory: ~/project
     steps:
       - checkout
       - attach_workspace:
-          at: /workspace
-      - run:
-          name: Install CodeSec CLI
-          command: npm install -g @contrast/contrast
+          at: ~/project
       - run:
           name: Authenticate CodeSec CLI
           command: |
@@ -48,14 +48,14 @@ jobs:
               --host https://ce.contrastsecurity.com
       - run:
           name: Perform SAST Scan
-          command: contrast scan --file /workspace/ImgStorageOutput/imgstorageasp.zip
+          command: contrast scan --file ImgStorageOutput/imgstorageasp.zip
 
   notify:
     docker:
       - image: cimg/base:stable
     steps:
       - run:
-          name: Send Notification
+          name: Check Workflow Status and Send Notification
           command: |
             if [ "${CIRCLE_JOB_STATUS}" = "success" ]; then
               curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
