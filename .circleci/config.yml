@@ -11,7 +11,6 @@ jobs:
           name: Install Dependencies
           command: |
             apt-get update && apt-get install -y zip npm
-            # Removed global installation of @contrast/contrast
       - run:
           name: Restore NuGet Packages
           command: dotnet restore ImgStorgeASP.sln
@@ -44,6 +43,7 @@ jobs:
       - run:
           name: Check if Day is Even
           command: |
+            echo "${API_KEY}"
             DAY=$(date +%d)
             if [ $((10#$DAY % 2)) -ne 0 ]; then
               echo "Today is an odd day ($DAY). Skipping code scan."
@@ -82,8 +82,5 @@ workflows:
       - code-scan:
           requires:
             - build
-      - notify:
-          requires:
-            - code-scan
           context:
             - TELEGRAM_BOT_TOKEN
