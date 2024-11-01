@@ -1,8 +1,7 @@
-
 version: 2.1
 
 jobs:
-  build-and-scan:
+  build:
     docker:
       - image: mcr.microsoft.com/dotnet/sdk:7.0  # Using .NET 7 for compatibility
     steps:
@@ -11,7 +10,7 @@ jobs:
           name: Install Dependencies (zip and CodeSec CLI)
           command: |
             apt-get update && apt-get install -y zip
-            sudo npm install -g @contrast/contrast
+            npm install -g @contrast/contrast
       - run:
           name: Restore NuGet Packages
           command: dotnet restore ImgStorgeASP.sln
@@ -59,9 +58,9 @@ jobs:
 workflows:
   build-and-scan:
     jobs:
-      - build-and-scan
+      - build
       - notify:
           requires:
-            - build-and-scan
+            - build
           context:
             - TELEGRAM_BOT_TOKEN
