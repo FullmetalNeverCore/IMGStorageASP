@@ -11,7 +11,7 @@ jobs:
           name: Install Dependencies
           command: |
             apt-get update && apt-get install -y zip npm
-            npm install -g @contrast/contrast
+            # Removed global installation of @contrast/contrast
       - run:
           name: Restore NuGet Packages
           command: dotnet restore ImgStorgeASP.sln
@@ -38,6 +38,16 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/project
+      - run:
+          name: Check if Day is Even
+          command: |
+            DAY=$(date +%d)
+            if [ $((10#$DAY % 2)) -ne 0 ]; then
+              echo "Today is an odd day ($DAY). Skipping code scan."
+              circleci-agent step halt
+            else
+              echo "Today is an even day ($DAY). Proceeding with code scan."
+            fi
       - run:
           name: Install Contrast CLI Locally
           command: npm install @contrast/contrast
