@@ -7,6 +7,10 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install `zip` Dependency
+          command: |
+            apt-get update && apt-get install -y zip
+      - run:
           name: Restore NuGet Packages
           command: dotnet restore ImgStorgeASP.sln
       - run:
