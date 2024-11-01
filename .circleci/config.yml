@@ -40,7 +40,7 @@ jobs:
           at: ~/project
       - run:
           name: Install Contrast CLI
-          command: npm install -g @contrast/contrast
+          command: npm install @contrast/contrast
       - run:
           name: Authenticate Contrast CLI
           command: |
