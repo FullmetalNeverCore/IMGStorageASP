@@ -39,18 +39,18 @@ jobs:
       - attach_workspace:
           at: ~/project
       - run:
-          name: Install Contrast CLI
+          name: Install Contrast CLI Locally
           command: npm install @contrast/contrast
       - run:
           name: Authenticate Contrast CLI
           command: |
-            contrast auth --api-key 2XWW1lpZjal6LUJ66E9lGa19oa1I1ve8 \
+            npx contrast auth --api-key 2XWW1lpZjal6LUJ66E9lGa19oa1I1ve8 \
               --authorization Y2F0aGFyYXNpc0BtYWlsLnJ1OkxOVE9DWUxLQTRNSTVMTEk= \
               --organization-id 4608bac8-b620-4678-893e-5417667cc262 \
               --host https://ce.contrastsecurity.com
       - run:
           name: Perform SAST Scan
-          command: contrast scan --file ImgStorageOutput/imgstorageasp.zip
+          command: npx contrast scan --file ImgStorageOutput/imgstorageasp.zip
 
   notify:
     docker:
