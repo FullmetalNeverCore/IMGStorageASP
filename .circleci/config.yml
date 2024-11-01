@@ -39,25 +39,21 @@ jobs:
       - attach_workspace:
           at: ~/project
       - run:
+          name: Install Contrast CLI Locally
+          command: npm install @contrast/contrast
+      - run:
           name: Check if Day is Even
           command: |
             DAY=02
             if [ $((10#$DAY % 2)) -ne 0 ]; then
               echo "Today is an odd day ($DAY). Skipping code scan."
-              circleci-agent step halt
             else
               echo "Today is an even day ($DAY). Proceeding with code scan."
-            fi
-      - run:
-          name: Install Contrast CLI Locally
-          command: npm install @contrast/contrast
-      - run:
-          name: Authenticate Contrast CLI
-          command: |
-            npx contrast auth --api-key 2XWW1lpZjal6LUJ66E9lGa19oa1I1ve8 \
+              npx contrast auth --api-key 2XWW1lpZjal6LUJ66E9lGa19oa1I1ve8 \
               --authorization Y2F0aGFyYXNpc0BtYWlsLnJ1OkxOVE9DWUxLQTRNSTVMTEk= \
               --organization-id 4608bac8-b620-4678-893e-5417667cc262 \
               --host https://ce.contrastsecurity.com
+            fi
       - run:
           name: Perform SAST Scan
           command: npx contrast scan --file ImgStorageOutput/imgstorageasp.zip
