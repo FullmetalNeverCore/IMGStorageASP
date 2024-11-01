@@ -3,30 +3,42 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: mcr.microsoft.com/dotnet/sdk:7.0  # Using .NET 7 for compatibility
+      - image: mcr.microsoft.com/dotnet/sdk:7.0
     steps:
       - checkout
       - run:
-          name: Install Dependencies (zip and npm)
+          name: Install zip
           command: |
-            apt-get update && apt-get install -y zip npm
-      - run:
-          name: Install CodeSec CLI
-          command: npm install -g @contrast/contrast
+            apt-get update && apt-get install -y zip
       - run:
           name: Restore NuGet Packages
           command: dotnet restore ImgStorgeASP.sln
       - run:
-          name: "Publish to a subfolder"
+          name: Publish Application
           command: |
             ENV_CONFIG_NAME=$(if [ "${CIRCLE_BRANCH}" = "main" ]; then echo "Release"; else echo "Debug"; fi)
             dotnet publish ImgStorgeASP.sln --configuration ${ENV_CONFIG_NAME} --output ImgStorageOutput
       - run:
-          name: "Create a deployment .zip package"
+          name: Create Deployment Package
           command: |
             cd ImgStorageOutput
             zip -r imgstorageasp.zip *
             cd ..
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ImgStorageOutput/imgstorageasp.zip
+
+  code-scan:
+    docker:
+      - image: cimg/node:18.16
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /workspace
+      - run:
+          name: Install CodeSec CLI
+          command: npm install -g @contrast/contrast
       - run:
           name: Authenticate CodeSec CLI
           command: |
@@ -35,15 +47,15 @@ jobs:
               --organization-id 4608bac8-b620-4678-893e-5417667cc262 \
               --host https://ce.contrastsecurity.com
       - run:
-          name: Perform SAST Scan on Deployment Package
-          command: contrast scan --file ImgStorageOutput/imgstorageasp.zip
+          name: Perform SAST Scan
+          command: contrast scan --file /workspace/ImgStorageOutput/imgstorageasp.zip
 
   notify:
     docker:
       - image: cimg/base:stable
     steps:
       - run:
-          name: Check Workflow Status and Send Notification
+          name: Send Notification
           command: |
             if [ "${CIRCLE_JOB_STATUS}" = "success" ]; then
               curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
@@ -61,8 +73,11 @@ workflows:
   build-and-scan:
     jobs:
       - build
-      - notify:
+      - code-scan:
           requires:
             - build
+      - notify:
+          requires:
+            - code-scan
           context:
             - TELEGRAM_BOT_TOKEN
