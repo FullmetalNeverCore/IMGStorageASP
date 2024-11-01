@@ -53,10 +53,8 @@ jobs:
               --authorization Y2F0aGFyYXNpc0BtYWlsLnJ1OkxOVE9DWUxLQTRNSTVMTEk= \
               --organization-id 4608bac8-b620-4678-893e-5417667cc262 \
               --host https://ce.contrastsecurity.com
+              npx contrast scan --file ImgStorageOutput/imgstorageasp.zip
             fi
-      - run:
-          name: Perform SAST Scan
-          command: npx contrast scan --file ImgStorageOutput/imgstorageasp.zip
 
   notify:
     docker:
