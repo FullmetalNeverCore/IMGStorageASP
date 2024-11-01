@@ -7,9 +7,9 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install Dependencies (zip and CodeSec CLI)
+          name: Install Dependencies (zip, npm, and CodeSec CLI)
           command: |
-            apt-get update && apt-get install -y zip
+            apt-get update && apt-get install -y zip npm
             npm install -g @contrast/contrast
       - run:
           name: Restore NuGet Packages
