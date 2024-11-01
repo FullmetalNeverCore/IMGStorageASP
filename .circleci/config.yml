@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: mcr.microsoft.com/dotnet/core/sdk:2.1
+      - image: mcr.microsoft.com/dotnet/sdk:6.0  # Updated to .NET 6 for compatibility
     steps:
       - checkout
       - run:
@@ -50,19 +50,4 @@ jobs:
             else
               curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
                 -d "chat_id=${TELEGRAM_NOTIFICATION_GROUP_ID}" \
-                -d "parse_mode=Markdown" \
-                --data-urlencode "text=❌ *Build and Scan Workflow* #${CIRCLE_BUILD_NUM} failed."
-            fi
-
-workflows:
-  build-and-scan:
-    jobs:
-      - build
-      - code-scan:
-          requires:
-            - build
-      - notify:
-          requires:
-            - code-scan
-          context:
-            - TELEGRAM_BOT_TOKEN
+                -d "
